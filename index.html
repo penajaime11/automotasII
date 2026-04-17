@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  /* ── INDEX-SPECIFIC ── */
+  .page {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+    margin-bottom: 1.1rem;
+    animation: fadeIn 1s ease both;
+  }
+
+  .main-title {
+    font-family: var(--display);
+    font-size: clamp(4.5rem, 13vw, 11rem);
+    line-height: 0.88;
+    letter-spacing: 0.02em;
+    animation: fadeIn 1s 0.1s ease both;
+  }
+
+  .main-title .line2 {
+    display: block;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent3) 55%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 0.92rem;
+    color: var(--muted);
+    font-weight: 300;
+    margin-top: 1.5rem;
+    letter-spacing: 0.04em;
+    animation: fadeIn 1s 0.2s ease both;
+  }
+
+  .student-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1.3rem;
+    padding: 0.45em 1.1em;
+    border: 1px solid var(--border);
+    border-radius: 2em;
+    background: var(--surface);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.07em;
+    animation: fadeIn 1s 0.28s ease both;
+  }
+
+  .student-chip strong { color: var(--text); }
+
+  .online-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent4);
+    box-shadow: 0 0 6px var(--accent4);
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+
+  .title-bar {
+    width: 50px; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    margin: 2.5rem auto 0;
+    animation: fadeIn 1s 0.32s ease both;
+  }
+
+  .units-label {
+    font-family: var(--mono);
+    font-size: 0.63rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 2.8rem;
+    margin-bottom: 1.3rem;
+    animation: fadeIn 1s 0.38s ease both;
+  }
+
+  /* ── UNIT CARDS ── */
+  .units-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    max-width: 940px;
+    width: 100%;
+    animation: fadeIn 1s 0.46s ease both;
+  }
+
+  .unit-card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.6rem 1.4rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1),
+                border-color 0.25s, box-shadow 0.35s;
+  }
+
+  .unit-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--uc-glow, rgba(0,229,255,0.08)), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .unit-card:not(.locked):hover::before { opacity: 1; }
+
+  .unit-card:not(.locked):hover {
+    transform: translateY(-6px) scale(1.015);
+    border-color: var(--uc-border, rgba(0,229,255,0.45));
+    box-shadow: 0 22px 44px rgba(0,0,0,0.4), 0 0 0 1px var(--uc-border, rgba(0,229,255,0.15));
+  }
+
+  .unit-card.locked {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .unit-card.locked::after {
+    content: '🔒';
+    position: absolute;
+    top: 0.85rem; right: 0.9rem;
+    font-size: 0.85rem;
+  }
+
+  .uc-num {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--uc-color, var(--accent));
+    text-transform: uppercase;
+  }
+
+  .uc-icon { font-size: 1.8rem; line-height: 1; }
+
+  .uc-name {
+    font-family: var(--display);
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+    line-height: 1.15;
+    color: var(--text);
+  }
+
+  .uc-topics {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.55;
+    flex: 1;
+  }
+
+  .uc-available {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--accent4);
+    letter-spacing: 0.07em;
+  }
+
+  .uc-available::before {
+    content: '';
+    display: block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent4);
+    box-shadow: 0 0 5px var(--accent4);
+  }
+
+  .uc-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.67rem;
+    letter-spacing: 0.08em;
+    color: var(--uc-color, var(--accent));
+    text-transform: uppercase;
+    transition: gap 0.2s;
+    margin-top: 0.2rem;
+  }
+
+  .unit-card:hover .uc-cta { gap: 0.75rem; }
+
+  @media (max-width: 800px) { .units-grid { grid-template-columns: repeat(2,1fr); } }
+  @media (max-width: 440px) { .units-grid { grid-template-columns: 1fr; } }
+
+  .temario-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+    padding: 0.65em 1.6em;
+    background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(162,89,255,0.12));
+    border: 1px solid rgba(0,229,255,0.4);
+    border-radius: 2em;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    transition: background 0.25s, border-color 0.25s, transform 0.25s;
+    animation: fadeIn 1s 0.35s ease both;
+  }
+  .temario-btn:hover {
+    background: linear-gradient(135deg, rgba(0,229,255,0.22), rgba(162,89,255,0.18));
+    border-color: rgba(0,229,255,0.7);
+    transform: translateY(-2px);
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<div class="page">
+  <main class="main">
+    <p class="eyebrow">Tecnológico Nacional de México</p>
+
+    <h1 class="main-title">
+      <span class="line1">Lenguajes y</span>
+      <span class="line2">Autómatas II</span>
+    </h1>
+
+    <p class="subtitle">Compiladores · Análisis · Generación de Código</p>
+
+    <div class="student-chip">
+      <span class="online-dot"></span>
+      Alumno: <strong>José Jaime Peña González</strong>
+    </div>
+
+    <div class="title-bar"></div>
+
+    <a class="temario-btn" href="temario.html">📋 Ver Temario Completo</a>
+
+    <p class="units-label">— Selecciona una unidad —</p>
+
+    <div class="units-grid">
+
+      <a class="unit-card"
+         href="units/unidad1.html"
+         style="--uc-color:#00e5ff;--uc-border:rgba(0,229,255,0.45);--uc-glow:rgba(0,229,255,0.09);">
+        <div class="uc-num">Unidad 01</div>
+        <div class="uc-icon">🧠</div>
+        <div class="uc-name">Análisis Semántico</div>
+        <div class="uc-topics">Árboles · Acciones semánticas · Tipos · Pila · Tabla de símbolos</div>
+        <div class="uc-available">Disponible</div>
+        <div class="uc-cta">Ver unidad <span>→</span></div>
+      </a>
+
+      <a class="unit-card"
+         href="units/unidad2.html"
+         style="--uc-color:#a259ff;--uc-border:rgba(162,89,255,0.45);--uc-glow:rgba(162,89,255,0.09);">
+        <div class="uc-num">Unidad 02</div>
+        <div class="uc-icon">⚙️</div>
+        <div class="uc-name">Generación de Código Intermedio</div>
+        <div class="uc-topics">Notaciones · Código P · Triples · Cuádruplos · Esquema</div>
+        <div class="uc-available">Disponible</div>
+        <div class="uc-cta">Ver unidad <span>→</span></div>
+      </a>
+
+      <a class="unit-card"
+         href="units/unidad3.html"
+         style="--uc-color:#ff3d71;--uc-border:rgba(255,61,113,0.45);--uc-glow:rgba(255,61,113,0.09);">
+        <div class="uc-num">Unidad 03</div>
+        <div class="uc-icon">🔧</div>
+        <div class="uc-name">Optimización</div>
+        <div class="uc-topics">Local · Ciclos · Global · De mirilla · Análisis de flujo</div>
+        <div class="uc-available">Disponible</div>
+        <div class="uc-cta">Ver unidad <span>→</span></div>
+      </a>
+
+      <a class="unit-card"
+         href="units/unidad4.html"
+         style="--uc-color:#00e096;--uc-border:rgba(0,224,150,0.45);--uc-glow:rgba(0,224,150,0.09);">
+        <div class="uc-num">Unidad 04</div>
+        <div class="uc-icon">💾</div>
+        <div class="uc-name">Generación de Código Objeto</div>
+        <div class="uc-topics">Registros · Ensamblador · Lenguaje máquina · Memoria</div>
+        <div class="uc-available">Disponible</div>
+        <div class="uc-cta">Ver unidad <span>→</span></div>
+      </a>
+
+    </div>
+  </main>
+
+  <footer>
+    ©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II &nbsp;·&nbsp; José Jaime Peña González
+  </footer>
+</div>
+
+<script>
+  // reveal on scroll (used by unit pages; harmless here)
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } }),
+    { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

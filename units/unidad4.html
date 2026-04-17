@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U4 — Generación de Código Objeto | Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="theme-u4">
+<div class="bg-glow"></div>
+
+<a class="back-btn" href="../index.html">← Inicio</a>
+
+<section class="hero">
+  <div class="hero-ambient"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="badge">TecNM · Lenguajes y Autómatas II</div>
+    <div class="hero-unit-label">UNIDAD 04</div>
+    <h1><span class="gradient-text">Generación de Código Objeto</span></h1>
+    <p class="hero-desc">La fase final del compilador: traducir código intermedio optimizado a instrucciones reales de la máquina objetivo, gestionando registros, lenguaje ensamblador, lenguaje máquina y memoria.</p>
+    <p class="hero-student">Alumno: <strong>José Jaime Peña González</strong></p>
+    <nav class="hero-nav">
+      <a href="#registros">4.1 Registros</a>
+      <a href="#ensamblador">4.2 Lenguaje Ensamblador</a>
+      <a href="#maquina">4.3 Lenguaje Máquina</a>
+      <a href="#memoria">4.4 Administración de Memoria</a>
+    </nav>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">UNIDAD 4</span>
+    <h2 class="section-title">Temas principales</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="topic-grid">
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,224,150,0.08);--tc-border:rgba(0,224,150,0.45);" onclick="document.getElementById('registros').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🗄️</span><div class="card-num">4.1</div>
+      <div class="card-title">Registros</div>
+      <div class="card-desc">Asignación y administración de registros del procesador para minimizar accesos a memoria.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,229,255,0.08);--tc-border:rgba(0,229,255,0.45);" onclick="document.getElementById('ensamblador').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">📋</span><div class="card-num">4.2</div>
+      <div class="card-title">Lenguaje Ensamblador</div>
+      <div class="card-desc">Mnemónicos simbólicos que representan instrucciones de máquina: MOV, ADD, JMP, CALL, etc.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(162,89,255,0.08);--tc-border:rgba(162,89,255,0.45);" onclick="document.getElementById('maquina').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">⚡</span><div class="card-num">4.3</div>
+      <div class="card-title">Lenguaje Máquina</div>
+      <div class="card-desc">Representación binaria final que ejecuta directamente el procesador sin traducción.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(247,151,30,0.08);--tc-border:rgba(247,151,30,0.45);" onclick="document.getElementById('memoria').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🧮</span><div class="card-num">4.4</div>
+      <div class="card-title">Administración de Memoria</div>
+      <div class="card-desc">Stack, heap, registros de activación y estrategias de asignación estática/dinámica.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4.1 REGISTROS -->
+<section class="section" id="registros">
+  <div class="section-header reveal">
+    <span class="section-num">4.1</span>
+    <h2 class="section-title">Registros</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Los <span class="hl">registros</span> son la memoria más rápida del procesador. Una buena <span class="hl2">asignación de registros</span> (register allocation) es crítica para el rendimiento final del código generado. El compilador debe decidir qué valores mantener en registros y cuáles dejar en memoria.</p>
+      <div class="two-col">
+        <div class="info-box green">
+          <h4>📊 Tipos de registros (x86-64)</h4>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="font-size:0.78rem;padding:0.9rem;">
+              <span class="ty">RAX</span> — acumulador / retorno<br>
+              <span class="ty">RBX</span> — base (callee-saved)<br>
+              <span class="ty">RCX</span> — contador / 4to arg<br>
+              <span class="ty">RDX</span> — datos / 3er arg<br>
+              <span class="ty">RSI</span> — 2do argumento<br>
+              <span class="ty">RDI</span> — 1er argumento<br>
+              <span class="ty">RSP</span> — stack pointer<br>
+              <span class="ty">RBP</span> — base pointer (frame)
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="info-box blue">
+            <h4>🔢 Asignación de Registros (Register Allocation)</h4>
+            <p>Se modela como <strong>coloración de grafos</strong>: los nodos son variables, las aristas indican interferencia (uso simultáneo) y los colores son registros disponibles. Si dos variables interfieren no pueden compartir registro.</p>
+          </div>
+          <div class="info-box yellow">
+            <h4>💾 Spilling</h4>
+            <p>Cuando no hay suficientes registros, algunas variables se <strong>derraman</strong> (spill) a la memoria stack. Genera instrucciones LOAD/STORE adicionales que penalizan el rendimiento.</p>
+          </div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">descriptor de registros y de direcciones</span></div>
+        <div class="code-body">
+<span class="cm">/* Descriptor de registro: qué variable tiene cada registro */</span><br>
+RegDesc[RAX] = {t1}<br>
+RegDesc[RBX] = {x, t2}   <span class="cm">// mismo valor, dos alias</span><br><br>
+<span class="cm">/* Descriptor de dirección: dónde vive cada variable */</span><br>
+AddrDesc[t1] = {RAX}<br>
+AddrDesc[x]  = {RBX, memoria[0x1020]}<br><br>
+<span class="cm">/* getReg — elige el mejor registro para una instrucción */</span><br>
+<span class="kw">function</span> <span class="fn">getReg</span>(op, src1, src2, dst):<br>
+&nbsp;&nbsp;<span class="kw">if</span> src1 ya está en registro y no se usa después → reusar<br>
+&nbsp;&nbsp;<span class="kw">else</span> buscar registro libre → si no hay, hacer spill
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4.2 LENGUAJE ENSAMBLADOR -->
+<section class="section" id="ensamblador">
+  <div class="section-header reveal">
+    <span class="section-num">4.2</span>
+    <h2 class="section-title">Lenguaje Ensamblador</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>El <span class="hl">lenguaje ensamblador</span> es la representación simbólica del lenguaje máquina. Cada mnemónico corresponde exactamente a una instrucción del procesador. El compilador genera ensamblador, y luego el <span class="hl2">ensamblador</span> (programa) lo convierte a binario.</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">traducción de código 3-dir → ensamblador x86-64</span></div>
+        <div class="code-body">
+<span class="cm">/* Código intermedio: t2 = a + b */</span><br>
+<span class="ty">MOV</span>  RAX, [a]     <span class="cm">; cargar a en RAX</span><br>
+<span class="ty">ADD</span>  RAX, [b]     <span class="cm">; RAX = RAX + b</span><br>
+<span class="ty">MOV</span>  [t2], RAX    <span class="cm">; guardar resultado en t2</span><br><br>
+<span class="cm">/* Condicional: if x &lt; y goto L */</span><br>
+<span class="ty">MOV</span>  RAX, [x]<br>
+<span class="ty">CMP</span>  RAX, [y]     <span class="cm">; comparar x e y → flags</span><br>
+<span class="ty">JL</span>   L             <span class="cm">; Jump if Less → ir a L</span><br><br>
+<span class="cm">/* Llamada a función f(arg1, arg2) */</span><br>
+<span class="ty">MOV</span>  RDI, [arg1]  <span class="cm">; 1er argumento</span><br>
+<span class="ty">MOV</span>  RSI, [arg2]  <span class="cm">; 2do argumento</span><br>
+<span class="ty">CALL</span> f<br>
+<span class="ty">MOV</span>  [resultado], RAX  <span class="cm">; retorno en RAX</span>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="info-box green">
+          <h4>📑 Estructura de un programa ensamblador</h4>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="font-size:0.78rem;padding:0.9rem;">
+<span class="cm">; Secciones típicas (NASM)</span><br>
+<span class="ty">section</span> .data      <span class="cm">; datos inicializados</span><br>
+&nbsp;&nbsp;msg db <span class="st">"Hola"</span>, 0<br><br>
+<span class="ty">section</span> .bss       <span class="cm">; datos no inicializados</span><br>
+&nbsp;&nbsp;buffer resb 64<br><br>
+<span class="ty">section</span> .text      <span class="cm">; código ejecutable</span><br>
+&nbsp;&nbsp;<span class="kw">global</span> _start<br>
+_start:<br>
+&nbsp;&nbsp;<span class="cm">; instrucciones aquí</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box blue">
+          <h4>🔤 Instrucciones esenciales</h4>
+          <ul class="numbered-list">
+            <li data-n="MOV"><span style="font-family:var(--mono);color:#00e096">MOV dst, src</span> — copiar dato.</li>
+            <li data-n="ADD"><span style="font-family:var(--mono);color:#00e096">ADD / SUB</span> — suma y resta.</li>
+            <li data-n="MUL"><span style="font-family:var(--mono);color:#00e096">MUL / DIV</span> — multiplicación y división.</li>
+            <li data-n="CMP"><span style="font-family:var(--mono);color:#00e096">CMP</span> — comparar dos operandos.</li>
+            <li data-n="JMP"><span style="font-family:var(--mono);color:#00e096">JMP / JE / JL / JG</span> — saltos.</li>
+            <li data-n="CAL"><span style="font-family:var(--mono);color:#00e096">CALL / RET</span> — llamada/retorno.</li>
+            <li data-n="PSH"><span style="font-family:var(--mono);color:#00e096">PUSH / POP</span> — pila del sistema.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4.3 LENGUAJE MÁQUINA -->
+<section class="section" id="maquina">
+  <div class="section-header reveal">
+    <span class="section-num">4.3</span>
+    <h2 class="section-title">Lenguaje Máquina</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>El <span class="hl">lenguaje máquina</span> es la representación binaria final que ejecuta directamente el procesador sin ninguna traducción adicional. Cada instrucción codifica el opcode, los operandos y el modo de direccionamiento en patrones de bits.</p>
+      <div class="info-box blue">
+        <h4>🧩 Formato de instrucción tipo-R (MIPS 32 bits)</h4>
+        <div style="margin-top:1rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;gap:2px;font-family:var(--mono);font-size:0.72rem;text-align:center;">
+            <div style="background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 31-26</div>
+              <div style="color:#00e5ff">opcode</div>
+              <div style="color:var(--muted);font-size:0.6rem">6 bits</div>
+            </div>
+            <div style="background:rgba(162,89,255,0.12);border:1px solid rgba(162,89,255,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 25-21</div>
+              <div style="color:#a259ff">rs</div>
+              <div style="color:var(--muted);font-size:0.6rem">5 bits</div>
+            </div>
+            <div style="background:rgba(162,89,255,0.12);border:1px solid rgba(162,89,255,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 20-16</div>
+              <div style="color:#a259ff">rt</div>
+              <div style="color:var(--muted);font-size:0.6rem">5 bits</div>
+            </div>
+            <div style="background:rgba(0,224,150,0.12);border:1px solid rgba(0,224,150,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 15-11</div>
+              <div style="color:#00e096">rd</div>
+              <div style="color:var(--muted);font-size:0.6rem">5 bits</div>
+            </div>
+            <div style="background:rgba(247,151,30,0.12);border:1px solid rgba(247,151,30,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 10-6</div>
+              <div style="color:#f7971e">shamt</div>
+              <div style="color:var(--muted);font-size:0.6rem">5 bits</div>
+            </div>
+            <div style="background:rgba(255,61,113,0.12);border:1px solid rgba(255,61,113,0.3);padding:0.5rem 0.2rem;border-radius:0.3rem;">
+              <div style="color:var(--muted);font-size:0.6rem;">bits 5-0</div>
+              <div style="color:#ff3d71">funct</div>
+              <div style="color:var(--muted);font-size:0.6rem">6 bits</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="info-box green">
+          <h4>📡 Modos de direccionamiento</h4>
+          <ul class="numbered-list">
+            <li data-n="IMM">Inmediato: el operando es la constante. <span style="font-family:var(--mono);color:#f1fa8c">MOV RAX, 5</span></li>
+            <li data-n="DIR">Directo: dirección de memoria explícita. <span style="font-family:var(--mono);color:#f1fa8c">MOV RAX, [100]</span></li>
+            <li data-n="IND">Indirecto: dirección está en registro. <span style="font-family:var(--mono);color:#f1fa8c">MOV RAX, [RBX]</span></li>
+            <li data-n="DES">Desplazamiento: base + offset. <span style="font-family:var(--mono);color:#f1fa8c">[RBP-8]</span></li>
+            <li data-n="IDX">Indexado: base + índice × escala. <span style="font-family:var(--mono);color:#f1fa8c">[RBX+RCX*4]</span></li>
+          </ul>
+        </div>
+        <div class="info-box yellow">
+          <h4>⚙️ Proceso de ensamblado (2 pasadas)</h4>
+          <ul class="numbered-list">
+            <li data-n="1P">1ª pasada: recorre el código, construye tabla de símbolos y etiquetas con sus direcciones.</li>
+            <li data-n="2P">2ª pasada: genera código binario resolviendo referencias usando la tabla del paso 1.</li>
+            <li data-n="OBJ">Produce archivo objeto (.o) con código reubicable.</li>
+            <li data-n="LNK">Enlazador (linker): une módulos .o y resuelve referencias externas.</li>
+            <li data-n="EXE">Resultado: ejecutable con direcciones absolutas listo para correr.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">ejemplo: ADD en binario MIPS</span></div>
+        <div class="code-body">
+<span class="cm">/* ADD $t0, $t1, $t2  →  $t0 = $t1 + $t2 */</span><br>
+<span class="cm">/* opcode=0  rs=$t1(9)  rt=$t2(10)  rd=$t0(8)  shamt=0  funct=0x20 */</span><br><br>
+<span style="color:#00e5ff">000000</span> <span style="color:#a259ff">01001</span> <span style="color:#a259ff">01010</span> <span style="color:#00e096">01000</span> <span style="color:#f7971e">00000</span> <span style="color:#ff3d71">100000</span><br>
+<span class="cm">&nbsp;&nbsp;op      rs     rt     rd    shamt   funct</span><br><br>
+Hexadecimal: <span style="color:#f1fa8c">0x012A4020</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4.4 ADMINISTRACIÓN DE MEMORIA -->
+<section class="section" id="memoria">
+  <div class="section-header reveal">
+    <span class="section-num">4.4</span>
+    <h2 class="section-title">Administración de Memoria</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>La <span class="hl">administración de memoria</span> define cómo y dónde se almacenan las variables, los registros de activación y los datos dinámicos durante la ejecución. El compilador genera código que gestiona estas tres regiones principales.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        <div class="info-box green">
+          <h4>📌 Estática</h4>
+          <p>Asignación en compile-time. Variables globales y estáticas. Dirección fija para toda la vida del programa.</p>
+          <div class="code-block" style="margin-top:0.7rem;"><div class="code-body" style="padding:0.7rem;font-size:0.75rem;"><span class="kw">static</span> <span class="ty">int</span> contador = 0;<br><span class="kw">int</span> global = 42;</div></div>
+        </div>
+        <div class="info-box blue">
+          <h4>📚 Stack (Pila)</h4>
+          <p>Registros de activación para funciones. Se crean al llamar (push frame) y se destruyen al retornar (pop frame). LIFO automático, muy eficiente.</p>
+        </div>
+        <div class="info-box purple">
+          <h4>🌊 Heap (Montículo)</h4>
+          <p>Memoria dinámica solicitada en run-time con <code>malloc/free</code> o <code>new/delete</code>. Flexible pero más lento; riesgo de fugas (memory leaks).</p>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">registro de activación (activation record / stack frame)</span></div>
+        <div class="code-body">
+<span class="cm">/* Estructura del stack frame al llamar f(a, b) */</span><br><br>
+<span style="color:#00e096">┌─────────────────────────┐</span>  ← RSP (stack pointer, dirección baja)<br>
+<span style="color:#00e096">│</span> Variables locales        <span style="color:#00e096">│</span><br>
+<span style="color:#00e096">│</span> Temporales               <span style="color:#00e096">│</span><br>
+<span style="color:#00e096">│</span> Registros guardados      <span style="color:#00e096">│</span><br>
+<span style="color:#00e096">│</span> RBP anterior (saved RBP) <span style="color:#00e096">│</span>  ← RBP (base pointer del frame actual)<br>
+<span style="color:#00e096">│</span> Dirección de retorno     <span style="color:#00e096">│</span><br>
+<span style="color:#00e096">│</span> Parámetros (a, b)        <span style="color:#00e096">│</span><br>
+<span style="color:#00e096">└─────────────────────────┘</span>  ← frame del caller (dirección alta)
+        </div>
+      </div>
+
+      <div class="info-box yellow">
+        <h4>🗺️ Mapa de memoria de un proceso</h4>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:0.4rem 1rem;font-family:var(--mono);font-size:0.78rem;margin-top:0.8rem;align-items:center;">
+          <span style="color:#ff3d71">Alta</span>
+          <div style="background:rgba(255,61,113,0.15);border:1px solid rgba(255,61,113,0.3);border-radius:0.3rem;padding:0.3rem 0.7rem;color:#ff3d71;">Stack ↓ (crece hacia abajo)</div>
+          <span style="color:var(--muted)">↕</span>
+          <div style="color:var(--muted);font-size:0.7rem;padding:0.2rem 0.7rem;">espacio libre</div>
+          <span style="color:var(--muted)">↕</span>
+          <div style="background:rgba(162,89,255,0.12);border:1px solid rgba(162,89,255,0.3);border-radius:0.3rem;padding:0.3rem 0.7rem;color:#a259ff;">Heap ↑ (crece hacia arriba)</div>
+          <span style="color:var(--muted)"></span>
+          <div style="background:rgba(0,224,150,0.1);border:1px solid rgba(0,224,150,0.25);border-radius:0.3rem;padding:0.3rem 0.7rem;color:#00e096;">BSS — variables globales no inicializadas</div>
+          <span style="color:var(--muted)"></span>
+          <div style="background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);border-radius:0.3rem;padding:0.3rem 0.7rem;color:#00e5ff;">Data — variables globales inicializadas</div>
+          <span style="color:#00e096">Baja</span>
+          <div style="background:rgba(247,151,30,0.1);border:1px solid rgba(247,151,30,0.25);border-radius:0.3rem;padding:0.3rem 0.7rem;color:#f7971e;">Text / Code — instrucciones del programa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESUMEN FINAL -->
+<div class="divider"></div>
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">RESUMEN GENERAL</span>
+    <h2 class="section-title">Fases del Compilador</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="reveal" style="background:var(--card);border:1px solid var(--border);border-radius:1rem;padding:2rem;">
+    <div class="flow-diagram" style="flex-direction:column;gap:0.3rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <div class="flow-box" style="background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.3);color:#00e5ff;">Análisis Léxico</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.3);color:#00e5ff;">Análisis Sintáctico</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.4);color:#00e5ff;font-weight:600;">Análisis Semántico (U1)</div>
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:1.2rem;margin:0.2rem 0;">↓</div>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;">
+        <div class="flow-box" style="background:rgba(162,89,255,0.1);border-color:rgba(162,89,255,0.4);color:#a259ff;font-weight:600;">Cód. Intermedio (U2)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="background:rgba(255,61,113,0.1);border-color:rgba(255,61,113,0.4);color:#ff3d71;font-weight:600;">Optimización (U3)</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box" style="background:rgba(0,224,150,0.1);border-color:rgba(0,224,150,0.4);color:#00e096;font-weight:600;">Cód. Objeto (U4)</div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:0.85rem;margin-top:1.5rem;">El compilador completo — desde el código fuente hasta instrucciones de máquina ejecutables.</p>
+  </div>
+</section>
+
+<footer>©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II — Unidad 4 &nbsp;·&nbsp; José Jaime Peña González</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach((e,i) => { if (e.isIntersecting) { setTimeout(()=>e.target.classList.add('visible'),i*70); obs.unobserve(e.target); } }),
+    { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

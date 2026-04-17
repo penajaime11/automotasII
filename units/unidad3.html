@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U3 — Optimización | Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="theme-u3">
+<div class="bg-glow"></div>
+
+<a class="back-btn" href="../index.html">← Inicio</a>
+
+<section class="hero">
+  <div class="hero-ambient"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="badge">TecNM · Lenguajes y Autómatas II</div>
+    <div class="hero-unit-label">UNIDAD 03</div>
+    <h1><span class="gradient-text">Optimización</span></h1>
+    <p class="hero-desc">Transformar el código intermedio para mejorar su eficiencia en tiempo de ejecución, uso de memoria y consumo de registros — sin alterar su resultado.</p>
+    <p class="hero-student">Alumno: <strong>José Jaime Peña González</strong></p>
+    <nav class="hero-nav">
+      <a href="#tipos">3.1 Tipos de Optimización</a>
+      <a href="#costos">3.2 Costos</a>
+    </nav>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">UNIDAD 3</span>
+    <h2 class="section-title">Temas principales</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="topic-grid">
+    <div class="topic-card reveal" style="--tc-bg:rgba(255,61,113,0.08);--tc-border:rgba(255,61,113,0.45);" onclick="document.getElementById('locales').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🔎</span><div class="card-num">3.1.1</div>
+      <div class="card-title">Optimización Local</div>
+      <div class="card-desc">Dentro de un bloque básico: eliminación de subexpresiones comunes, plegado de constantes.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(255,61,113,0.08);--tc-border:rgba(255,61,113,0.45);" onclick="document.getElementById('ciclos').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🔄</span><div class="card-num">3.1.2</div>
+      <div class="card-title">Optimización de Ciclos</div>
+      <div class="card-desc">Mover código invariante, reducción de la intensidad de operadores, eliminación de inducciones.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(255,61,113,0.08);--tc-border:rgba(255,61,113,0.45);" onclick="document.getElementById('global').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🌐</span><div class="card-num">3.1.3</div>
+      <div class="card-title">Optimización Global</div>
+      <div class="card-desc">A lo largo de todo el flujo del programa: propagación de copias, código muerto.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(255,61,113,0.08);--tc-border:rgba(255,61,113,0.45);" onclick="document.getElementById('mirilla').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🔭</span><div class="card-num">3.1.4</div>
+      <div class="card-title">Optimización de Mirilla</div>
+      <div class="card-desc">Ventana deslizante sobre instrucciones de código objeto para reemplazar secuencias ineficientes.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(162,89,255,0.08);--tc-border:rgba(162,89,255,0.45);" onclick="document.getElementById('costos').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">💰</span><div class="card-num">3.2</div>
+      <div class="card-title">Costos</div>
+      <div class="card-desc">Costo de ejecución, criterios para mejorar el código y análisis del flujo de datos.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 3.1 TIPOS -->
+<section class="section" id="tipos">
+  <div class="section-header reveal">
+    <span class="section-num">3.1</span>
+    <h2 class="section-title">Tipos de Optimización</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <!-- LOCAL -->
+  <div class="deep-section reveal" id="locales">
+    <div class="deep-content">
+      <p><span class="hl">Optimización local</span> actúa dentro de un <span class="hl2">bloque básico</span>: secuencia lineal de instrucciones sin saltos. Es el tipo más seguro y fácil de aplicar.</p>
+      <div class="two-col">
+        <div class="code-block">
+          <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">antes de optimizar</span></div>
+          <div class="code-body" style="font-size:0.8rem;">
+t1 = a + b<br>
+t2 = a + b    <span class="cm">// subexp. repetida</span><br>
+t3 = 2 * 3    <span class="cm">// constantes</span><br>
+t4 = t1 + t3<br>
+x  = t4<br>
+y  = t4       <span class="cm">// propagación</span>
+          </div>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">después de optimizar</span></div>
+          <div class="code-body" style="font-size:0.8rem;">
+t1 = a + b    <span class="cm">// una sola vez</span><br>
+<span class="cm">// t2 eliminado (= t1)</span><br>
+<span class="cm">// t3 = 6 (plegado)</span><br>
+t4 = t1 + 6   <span class="cm">// constante incrustada</span><br>
+x  = t4<br>
+y  = t4       <span class="cm">// copia propagada</span>
+          </div>
+        </div>
+      </div>
+      <div class="info-box red">
+        <h4>🔎 Técnicas locales principales</h4>
+        <ul class="numbered-list">
+          <li data-n="CSE">Eliminación de subexpresiones comunes (CSE).</li>
+          <li data-n="CF">Plegado de constantes (Constant Folding): evaluar en compile-time.</li>
+          <li data-n="CP">Propagación de copias: reemplazar t2=t1 usando t1 directamente.</li>
+          <li data-n="DCE">Eliminación de código muerto: código que no afecta la salida.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CICLOS -->
+  <div class="deep-section reveal" id="ciclos">
+    <div class="deep-content">
+      <p><span class="hl">Optimización de ciclos</span> es donde más se gana en rendimiento, ya que el código se ejecuta repetidamente.</p>
+      <div class="info-box purple">
+        <h4>🔄 Técnicas para ciclos</h4>
+        <ul class="numbered-list">
+          <li data-n="LI">Movimiento de código invariante: sacar instrucciones que no cambian del cuerpo del ciclo.</li>
+          <li data-n="SR">Reducción de intensidad: reemplazar operaciones costosas por equivalentes más baratas (ej. multiplicación → suma).</li>
+          <li data-n="EI">Eliminación de variables de inducción: si i y j=4*i evolucionan juntas, eliminar cálculos redundantes de j.</li>
+          <li data-n="LU">Desenrollado de ciclos (Loop Unrolling): duplicar el cuerpo para reducir saltos.</li>
+        </ul>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">movimiento de código invariante</span></div>
+        <div class="code-body">
+<span class="cm">/* Antes */</span><br>
+<span class="kw">while</span> (i < n) {<br>
+&nbsp;&nbsp;t = base + w;   <span class="cm">// invariante! (no cambia)</span><br>
+&nbsp;&nbsp;a[i] = t * i;<br>
+&nbsp;&nbsp;i++;<br>
+}<br><br>
+<span class="cm">/* Después */</span><br>
+t = base + w;   <span class="cm">// movido fuera del ciclo</span><br>
+<span class="kw">while</span> (i < n) { a[i] = t * i; i++; }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL -->
+  <div class="deep-section reveal" id="global">
+    <div class="deep-content">
+      <p><span class="hl">Optimización global</span> analiza el flujo de datos a través de todos los bloques básicos del programa usando grafos de flujo de control.</p>
+      <div class="flex-grid">
+        <div class="info-box red">
+          <h4>🌐 Propagación global</h4>
+          <p>Propagar valores constantes y copias más allá de los límites de un bloque básico, incluso a través de bifurcaciones.</p>
+        </div>
+        <div class="info-box purple">
+          <h4>💀 Código muerto global</h4>
+          <p>Variables que son definidas pero nunca usadas en ningún camino del grafo de flujo se pueden eliminar.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIRILLA -->
+  <div class="deep-section reveal" id="mirilla">
+    <div class="deep-content">
+      <p>La <span class="hl">optimización de mirilla</span> (peephole) examina una pequeña ventana de instrucciones contiguas en el código objeto y las reemplaza por secuencias equivalentes más cortas o rápidas.</p>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">ejemplos de optimización de mirilla</span></div>
+        <div class="code-body">
+<span class="cm">/* Salto redundante */</span><br>
+<span class="kw">goto</span> L1   <span class="cm">// Antes</span><br>
+L1:<br>
+→ L1:     <span class="cm">// Después (eliminar goto)</span><br><br>
+<span class="cm">/* Store-load redundante */</span><br>
+<span class="ty">ST</span> R0, x   <span class="cm">// guarda R0 en x</span><br>
+<span class="ty">LD</span> R0, x   <span class="cm">// vuelve a cargar x en R0</span><br>
+→ <span class="ty">ST</span> R0, x  <span class="cm">// segunda instrucción es redundante</span><br><br>
+<span class="cm">/* Multiplicación por potencia de 2 */</span><br>
+t = x * 2  →  t = x &lt;&lt; 1   <span class="cm">// shift izquierda</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 3.2 COSTOS -->
+<section class="section" id="costos">
+  <div class="section-header reveal">
+    <span class="section-num">3.2</span>
+    <h2 class="section-title">Costos</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>La optimización implica evaluar el <span class="hl">costo de ejecución</span> para decidir cuándo una transformación es beneficiosa sin aumentar el tiempo de compilación excesivamente.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        <div class="info-box red"><h4>3.2.1 Costo de Ejecución</h4><p>Ciclos de CPU, accesos a memoria, uso de registros y pilas. Las operaciones de memoria son mucho más costosas que las de registro.</p></div>
+        <div class="info-box purple"><h4>3.2.2 Criterios de Mejora</h4><p>Reducir instrucciones, reemplazar operaciones lentas por rápidas, minimizar accesos a memoria y aprovechar el caché.</p></div>
+        <div class="info-box blue"><h4>3.2.3 Análisis de Flujo de Datos</h4><p>Calcular conjuntos GEN, KILL, IN, OUT para cada bloque básico usando ecuaciones de punto fijo.</p></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">análisis de flujo — definiciones disponibles</span></div>
+        <div class="code-body">
+<span class="cm">/* Para cada bloque B */</span><br>
+GEN[B]  = definiciones generadas en B no eliminadas después<br>
+KILL[B] = definiciones de otros bloques eliminadas por B<br><br>
+IN[B]   = ∪ OUT[P]  para todo predecesor P de B<br>
+OUT[B]  = GEN[B] ∪ (IN[B] − KILL[B])<br><br>
+<span class="cm">/* Se itera hasta punto fijo */</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II — Unidad 3 &nbsp;·&nbsp; José Jaime Peña González</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach((e,i) => { if (e.isIntersecting) { setTimeout(()=>e.target.classList.add('visible'),i*70); obs.unobserve(e.target); } }),
+    { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

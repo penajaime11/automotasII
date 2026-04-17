@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U2 — Generación de Código Intermedio | Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="theme-u2">
+<div class="bg-glow"></div>
+
+<a class="back-btn" href="../index.html">← Inicio</a>
+
+<section class="hero">
+  <div class="hero-ambient"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="badge">TecNM · Lenguajes y Autómatas II</div>
+    <div class="hero-unit-label">UNIDAD 02</div>
+    <h1><span class="gradient-text">Generación de Código Intermedio</span></h1>
+    <p class="hero-desc">Representaciones independientes de la máquina que conectan el análisis semántico con la generación de código objeto.</p>
+    <p class="hero-student">Alumno: <strong>José Jaime Peña González</strong></p>
+    <nav class="hero-nav">
+      <a href="#notaciones">2.1 Notaciones</a>
+      <a href="#representaciones">2.2 Representaciones</a>
+      <a href="#esquema">2.3 Esquema de Generación</a>
+    </nav>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">UNIDAD 2</span>
+    <h2 class="section-title">Temas principales</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="topic-grid">
+    <div class="topic-card reveal" style="--tc-bg:rgba(162,89,255,0.08);--tc-border:rgba(162,89,255,0.45);" onclick="document.getElementById('notaciones').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">📝</span>
+      <div class="card-num">2.1</div>
+      <div class="card-title">Notaciones</div>
+      <div class="card-desc">Prefija, infija y postfija como representaciones alternativas de expresiones.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,229,255,0.08);--tc-border:rgba(0,229,255,0.45);" onclick="document.getElementById('representaciones').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🗃️</span>
+      <div class="card-num">2.2</div>
+      <div class="card-title">Representaciones de Código Intermedio</div>
+      <div class="card-desc">Notación Polaca, Código P, Triplos y Cuádruplos como formas de código intermedio.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,224,150,0.08);--tc-border:rgba(0,224,150,0.45);" onclick="document.getElementById('esquema').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">⚙️</span>
+      <div class="card-num">2.3</div>
+      <div class="card-title">Esquema de Generación</div>
+      <div class="card-desc">Variables, expresiones, asignaciones, instrucciones de control, funciones y estructuras.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 2.1 NOTACIONES -->
+<section class="section" id="notaciones">
+  <div class="section-header reveal">
+    <span class="section-num">2.1</span>
+    <h2 class="section-title">Notaciones</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Las <span class="hl">notaciones</span> son formas de escribir expresiones según la posición del operador respecto a sus operandos. Son fundamentales para la generación de código intermedio.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+        <div class="info-box purple">
+          <h4>2.1.1 Prefija</h4>
+          <p>El operador va <strong>antes</strong> que sus operandos. También llamada notación polaca.</p>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="padding:0.8rem;font-size:0.78rem;">
+              <span class="cm">-- a + b * c --</span><br>
+              <span style="color:#f1fa8c">+ a * b c</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box blue">
+          <h4>2.1.2 Infija</h4>
+          <p>El operador va <strong>entre</strong> los operandos. Es la notación matemática estándar.</p>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="padding:0.8rem;font-size:0.78rem;">
+              <span class="cm">-- expresión normal --</span><br>
+              <span style="color:#f1fa8c">a + b * c</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box green">
+          <h4>2.1.3 Postfija</h4>
+          <p>El operador va <strong>después</strong> de los operandos. Notación polaca inversa (RPN).</p>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="padding:0.8rem;font-size:0.78rem;">
+              <span class="cm">-- a + b * c --</span><br>
+              <span style="color:#f1fa8c">a b c * +</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">conversión infija → postfija con pila</span>
+        </div>
+        <div class="code-body">
+<span class="cm">/* Algoritmo shunting-yard (Dijkstra) */</span><br>
+<span class="kw">for each</span> token <span class="kw">in</span> expresión_infija:<br>
+&nbsp;&nbsp;<span class="kw">if</span> token es <span class="nm">operando</span>   → agregar a salida<br>
+&nbsp;&nbsp;<span class="kw">if</span> token es <span class="op">(</span>          → push a pila<br>
+&nbsp;&nbsp;<span class="kw">if</span> token es <span class="op">)</span>          → pop pila hasta <span class="op">(</span>, agregar a salida<br>
+&nbsp;&nbsp;<span class="kw">if</span> token es <span class="nm">operador</span>   → pop mientras precedencia mayor, luego push<br>
+<span class="kw">while</span> pila no vacía → pop y agregar a salida
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 2.2 REPRESENTACIONES -->
+<section class="section" id="representaciones">
+  <div class="section-header reveal">
+    <span class="section-num">2.2</span>
+    <h2 class="section-title">Representaciones de Código Intermedio</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>El <span class="hl">código intermedio</span> es una representación interna del programa que es independiente de la arquitectura objetivo, facilitando la portabilidad y la optimización.</p>
+
+      <!-- Notación Polaca -->
+      <div class="info-box purple">
+        <h4>2.2.1 Notación Polaca (Inversa — RPN)</h4>
+        <p>Los operadores siguen a sus operandos. Se evalúa con una pila: al encontrar un operador, se sacan los operandos necesarios, se opera y se empuja el resultado.</p>
+        <div class="code-block" style="margin-top:0.8rem;">
+          <div class="code-body" style="padding:0.9rem;">
+            <span class="cm">-- Expresión: (3 + 4) * 5 --</span><br>
+            <span style="color:#f1fa8c">3 4 + 5 *</span><br><br>
+            <span class="cm">-- Evaluación con pila --</span><br>
+            push 3 → [3]<br>
+            push 4 → [3, 4]<br>
+            +  → pop 4, pop 3, push 7 → [7]<br>
+            push 5 → [7, 5]<br>
+            *  → pop 5, pop 7, push 35 → [35]
+          </div>
+        </div>
+      </div>
+
+      <!-- Código P -->
+      <div class="info-box blue">
+        <h4>2.2.2 Código P (P-code)</h4>
+        <p>Código para una <strong>máquina de pila abstracta</strong>. Fue popularizado por Pascal. Las instrucciones operan sobre una pila de datos virtual.</p>
+        <div class="code-block" style="margin-top:0.8rem;">
+          <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">ejemplo: a := b + c * d</span></div>
+          <div class="code-body">
+<span class="ty">lod</span> b    <span class="cm">// carga b</span><br>
+<span class="ty">lod</span> c    <span class="cm">// carga c</span><br>
+<span class="ty">lod</span> d    <span class="cm">// carga d</span><br>
+<span class="ty">mpi</span>      <span class="cm">// multiplica c * d</span><br>
+<span class="ty">adi</span>      <span class="cm">// suma b + (c*d)</span><br>
+<span class="ty">str</span> a    <span class="cm">// almacena en a</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Triples -->
+      <div class="info-box green">
+        <h4>2.2.3 Triples</h4>
+        <p>Cada instrucción tiene la forma <strong>(operador, arg1, arg2)</strong>. Los resultados se referencian por el número de la instrucción que los generó (implícito).</p>
+        <div class="code-block" style="margin-top:0.8rem;">
+          <div class="code-body" style="padding:0;">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Operador</th><th>Arg1</th><th>Arg2</th></tr></thead>
+              <tbody>
+                <tr><td>(0)</td><td style="color:#a259ff">*</td><td>c</td><td>d</td></tr>
+                <tr><td>(1)</td><td style="color:#a259ff">+</td><td>b</td><td>(0)</td></tr>
+                <tr><td>(2)</td><td style="color:#a259ff">:=</td><td>a</td><td>(1)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p style="margin-top:0.6rem;">⚠️ Problema: difíciles de reordenar durante optimización (referencias implícitas).</p>
+      </div>
+
+      <!-- Cuádruplos -->
+      <div class="info-box yellow">
+        <h4>2.2.4 Cuádruplos</h4>
+        <p>Forma <strong>(operador, arg1, arg2, resultado)</strong>. El resultado es explícito mediante temporales. Facilitan la optimización y reordenamiento.</p>
+        <div class="code-block" style="margin-top:0.8rem;">
+          <div class="code-body" style="padding:0;">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Op</th><th>Arg1</th><th>Arg2</th><th>Resultado</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td style="color:#f7971e">*</td><td>c</td><td>d</td><td>t1</td></tr>
+                <tr><td>1</td><td style="color:#f7971e">+</td><td>b</td><td>t1</td><td>t2</td></tr>
+                <tr><td>2</td><td style="color:#f7971e">:=</td><td>t2</td><td>—</td><td>a</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p style="margin-top:0.6rem;">✅ Más flexibles que triples. Son la representación más usada en compiladores modernos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 2.3 ESQUEMA DE GENERACIÓN -->
+<section class="section" id="esquema">
+  <div class="section-header reveal">
+    <span class="section-num">2.3</span>
+    <h2 class="section-title">Esquema de Generación</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>El <span class="hl">esquema de generación</span> define cómo traducir cada construcción del lenguaje fuente a código intermedio de 3 direcciones.</p>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">2.3.1–2.3.3 Variables, expresiones y asignaciones</span></div>
+        <div class="code-body">
+<span class="cm">/* Variables y constantes */</span><br>
+E → <span class="nm">id</span>     <span class="kw">action</span>: { E.lugar = tabla[id] }<br>
+E → <span class="nm">num</span>    <span class="kw">action</span>: { E.lugar = num.val }<br><br>
+<span class="cm">/* Expresiones aritméticas */</span><br>
+E → E₁ <span class="op">+</span> E₂  <span class="kw">action</span>: { t=nuevo(); <span class="fn">emit</span>(t <span class="st">":="</span> E₁ <span class="st">"+"</span> E₂); E.lugar=t }<br><br>
+<span class="cm">/* Asignación */</span><br>
+S → <span class="nm">id</span> <span class="op">:=</span> E  <span class="kw">action</span>: { <span class="fn">emit</span>(id <span class="st">":="</span> E.lugar) }
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">2.3.4 Instrucciones de control — if/while</span></div>
+        <div class="code-body">
+<span class="cm">/* IF-THEN-ELSE */</span><br>
+S → <span class="kw">if</span> E <span class="kw">then</span> S₁ <span class="kw">else</span> S₂:<br>
+&nbsp;&nbsp;generar: <span class="fn">ifFalse</span> E.lugar <span class="kw">goto</span> Lfalso<br>
+&nbsp;&nbsp;código de S₁<br>
+&nbsp;&nbsp;<span class="kw">goto</span> Lfin<br>
+&nbsp;&nbsp;Lfalso: código de S₂<br>
+&nbsp;&nbsp;Lfin:<br><br>
+<span class="cm">/* WHILE */</span><br>
+S → <span class="kw">while</span> E <span class="kw">do</span> S₁:<br>
+&nbsp;&nbsp;Linicio: evaluar E<br>
+&nbsp;&nbsp;<span class="fn">ifFalse</span> E.lugar <span class="kw">goto</span> Lfin<br>
+&nbsp;&nbsp;código de S₁<br>
+&nbsp;&nbsp;<span class="kw">goto</span> Linicio<br>
+&nbsp;&nbsp;Lfin:
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="code-block">
+          <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">2.3.5 Funciones</span></div>
+          <div class="code-body" style="font-size:0.78rem;">
+<span class="cm">/* Llamada a función */</span><br>
+<span class="kw">for each</span> arg <span class="kw">in</span> args:<br>
+&nbsp;&nbsp;<span class="fn">emit</span>(<span class="st">"param"</span> arg)<br>
+<span class="fn">emit</span>(<span class="st">"call"</span> f, n)<br>
+<span class="fn">emit</span>(<span class="st">"result"</span> t)<br><br>
+<span class="cm">/* Retorno */</span><br>
+<span class="fn">emit</span>(<span class="st">"return"</span> E.lugar)
+          </div>
+        </div>
+        <div class="code-block">
+          <div class="code-header"><div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div><span class="code-label">2.3.6 Estructuras / Arreglos</span></div>
+          <div class="code-body" style="font-size:0.78rem;">
+<span class="cm">/* Acceso a arreglo a[i] */</span><br>
+t1 = i <span class="op">*</span> ancho_elem<br>
+t2 = base_a + t1<br>
+t3 = *t2  <span class="cm">// indirección</span><br><br>
+<span class="cm">/* Asignación a[i] := x */</span><br>
+t1 = i <span class="op">*</span> ancho_elem<br>
+t2 = base_a + t1<br>
+*t2 = x
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II — Unidad 2 &nbsp;·&nbsp; José Jaime Peña González</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach((e,i) => { if (e.isIntersecting) { setTimeout(()=>e.target.classList.add('visible'),i*70); obs.unobserve(e.target); } }),
+    { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

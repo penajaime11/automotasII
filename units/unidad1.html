@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U1 — Análisis Semántico | Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="../css/styles.css">
+</head>
+<body class="theme-u1">
+<div class="bg-glow"></div>
+
+<a class="back-btn" href="../index.html">← Inicio</a>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-ambient"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="badge">TecNM · Lenguajes y Autómatas II</div>
+    <div class="hero-unit-label">UNIDAD 01</div>
+    <h1><span class="gradient-text">Análisis Semántico</span></h1>
+    <p class="hero-desc">Más allá de la sintaxis — verifica el significado, construye la tabla de símbolos y prepara el terreno para la generación de código.</p>
+    <p class="hero-student">Alumno: <strong>José Jaime Peña González</strong></p>
+    <nav class="hero-nav">
+      <a href="#arboles">1.1 Árboles</a>
+      <a href="#acciones">1.2 Acciones</a>
+      <a href="#tipos">1.3 Tipos</a>
+      <a href="#pila">1.4 Pila</a>
+      <a href="#esquema">1.5 Esquema</a>
+      <a href="#tabla">1.6 Tabla Símbolos</a>
+      <a href="#errores">1.7 Errores</a>
+    </nav>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">UNIDAD 1</span>
+    <h2 class="section-title">Temas principales</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="topic-grid">
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,229,255,0.08);--tc-border:rgba(0,229,255,0.45);" onclick="document.getElementById('arboles').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🌳</span>
+      <div class="card-num">1.1</div>
+      <div class="card-title">Árboles de Expresiones</div>
+      <div class="card-desc">Representación jerárquica de expresiones que facilita la evaluación y optimización.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(162,89,255,0.08);--tc-border:rgba(162,89,255,0.45);" onclick="document.getElementById('acciones').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">⚙️</span>
+      <div class="card-num">1.2</div>
+      <div class="card-title">Acciones Semánticas</div>
+      <div class="card-desc">Código embebido en la gramática que se ejecuta durante el análisis sintáctico.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,224,150,0.08);--tc-border:rgba(0,224,150,0.45);" onclick="document.getElementById('tipos').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🔍</span>
+      <div class="card-num">1.3</div>
+      <div class="card-title">Comprobaciones de Tipos</div>
+      <div class="card-desc">Verificación estática y dinámica de compatibilidad de tipos en expresiones.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(247,151,30,0.08);--tc-border:rgba(247,151,30,0.45);" onclick="document.getElementById('pila').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">📚</span>
+      <div class="card-num">1.4</div>
+      <div class="card-title">Pila Semántica</div>
+      <div class="card-desc">Estructura LIFO que almacena atributos durante el análisis sintáctico bottom-up.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,229,255,0.08);--tc-border:rgba(0,229,255,0.45);" onclick="document.getElementById('esquema').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🔀</span>
+      <div class="card-num">1.5</div>
+      <div class="card-title">Esquema de Traducción</div>
+      <div class="card-desc">Gramática con acciones incrustadas que dirigen la síntesis de atributos.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(0,224,150,0.08);--tc-border:rgba(0,224,150,0.45);" onclick="document.getElementById('tabla').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🗂️</span>
+      <div class="card-num">1.6</div>
+      <div class="card-title">Tabla de Símbolos</div>
+      <div class="card-desc">Estructura central del compilador: registra identificadores, tipos y direcciones.</div>
+    </div>
+    <div class="topic-card reveal" style="--tc-bg:rgba(255,61,113,0.08);--tc-border:rgba(255,61,113,0.45);" onclick="document.getElementById('errores').scrollIntoView({behavior:'smooth'})">
+      <span class="card-icon">🚨</span>
+      <div class="card-num">1.7</div>
+      <div class="card-title">Errores Semánticos</div>
+      <div class="card-desc">Detección, reporte y recuperación de errores de significado en el código fuente.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.1 ÁRBOLES -->
+<section class="section" id="arboles">
+  <div class="section-header reveal">
+    <span class="section-num">1.1</span>
+    <h2 class="section-title">Árboles de Expresiones</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Un <span class="hl">árbol de expresión</span> es un árbol binario donde las <span class="hl3">hojas</span> son operandos y los <span class="hl2">nodos internos</span> son operadores. Es la representación interna más natural de una expresión dentro de un compilador.</p>
+      <div class="two-col">
+        <div>
+          <p style="font-family:var(--mono);font-size:0.78rem;color:var(--muted);margin-bottom:1rem;">Expresión: <span style="color:#f1fa8c">(a + b) * (c − 3)</span></p>
+          <div class="tree-container">
+            <div class="tree">
+              <div class="tree-node op-node">*</div>
+              <div class="tree-connector"></div>
+              <div style="display:flex;gap:3.5rem;position:relative;">
+                <div style="position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--border);"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;">
+                  <div class="tree-connector"></div>
+                  <div class="tree-node op-node">+</div>
+                  <div class="tree-connector"></div>
+                  <div style="display:flex;gap:1.2rem;">
+                    <div style="display:flex;flex-direction:column;align-items:center;"><div class="tree-connector"></div><div class="tree-node">a</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;"><div class="tree-connector"></div><div class="tree-node">b</div></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:center;">
+                  <div class="tree-connector"></div>
+                  <div class="tree-node op-node">−</div>
+                  <div class="tree-connector"></div>
+                  <div style="display:flex;gap:1.2rem;">
+                    <div style="display:flex;flex-direction:column;align-items:center;"><div class="tree-connector"></div><div class="tree-node">c</div></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;"><div class="tree-connector"></div><div class="tree-node">3</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="info-box blue">
+          <h4>🌳 Tipos de recorrido</h4>
+          <ul class="numbered-list" style="margin-top:0.5rem;">
+            <li data-n="PRE">Preorden: Operador → Izq → Der → <span style="color:#f1fa8c;font-family:var(--mono)">* + a b − c 3</span></li>
+            <li data-n="IN">Inorden: Izq → Op → Der → <span style="color:#f1fa8c;font-family:var(--mono)">a+b * c−3</span></li>
+            <li data-n="POST">Postorden: Izq → Der → Op → <span style="color:#f1fa8c;font-family:var(--mono)">a b + c 3 − *</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.2 ACCIONES SEMÁNTICAS -->
+<section class="section" id="acciones">
+  <div class="section-header reveal">
+    <span class="section-num">1.2</span>
+    <h2 class="section-title">Acciones Semánticas del Analizador Sintáctico</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Las <span class="hl">acciones semánticas</span> son fragmentos de código embebidos en la gramática que se ejecutan durante el reconocimiento sintáctico para <span class="hl2">construir estructuras de datos</span> y verificar restricciones de contexto.</p>
+      <div class="two-col">
+        <div class="info-box blue">
+          <h4>⬆️ Atributos Sintetizados</h4>
+          <p>Se calculan <strong>de abajo hacia arriba</strong>. El valor del padre depende de los hijos. Son el caso más común en parsers LALR.</p>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="padding:0.9rem;">
+              E → E <span class="op">+</span> T  <span class="cm">{ E.val = E.val + T.val }</span><br>
+              E → T        <span class="cm">{ E.val = T.val }</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-box purple">
+          <h4>⬇️ Atributos Heredados</h4>
+          <p>Se pasan <strong>de arriba hacia abajo</strong>. El padre transmite información a los hijos. Comunes para verificar tipos y ámbitos.</p>
+          <div class="code-block" style="margin-top:0.8rem;">
+            <div class="code-body" style="padding:0.9rem;">
+              D → T L  <span class="cm">{ L.tipo = T.tipo }</span><br>
+              L → id   <span class="cm">{ insertar(id, L.tipo) }</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">calculadora con gramática dirigida por sintaxis (SDD)</span>
+        </div>
+        <div class="code-body">
+<span class="cm">/* Cada producción incluye su acción semántica */</span><br>
+E → E₁ <span class="op">+</span> T   <span class="kw">action</span>: { E.val = E₁.val + T.val }<br>
+E → E₁ <span class="op">-</span> T   <span class="kw">action</span>: { E.val = E₁.val - T.val }<br>
+E → T        <span class="kw">action</span>: { E.val = T.val }<br>
+T → T₁ <span class="op">*</span> F   <span class="kw">action</span>: { T.val = T₁.val <span class="op">*</span> F.val }<br>
+T → F        <span class="kw">action</span>: { T.val = F.val }<br>
+F → <span class="op">(</span>E<span class="op">)</span>      <span class="kw">action</span>: { F.val = E.val }<br>
+F → <span class="nm">num</span>      <span class="kw">action</span>: { F.val = num.lexval }
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.3 TIPOS -->
+<section class="section" id="tipos">
+  <div class="section-header reveal">
+    <span class="section-num">1.3</span>
+    <h2 class="section-title">Comprobaciones de Tipos en Expresiones</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>El <span class="hl">verificador de tipos</span> garantiza que las operaciones se apliquen a operandos compatibles. Opera en tiempo de <span class="hl2">compilación</span> (estático) o en tiempo de <span class="hl3">ejecución</span> (dinámico).</p>
+      <div class="flex-grid">
+        <div class="info-box blue"><h4>🔒 Tipado Estático</h4><p>Verificación antes de ejecutar. Detecta errores temprano. Ej: C, Java, Pascal.</p></div>
+        <div class="info-box yellow"><h4>🌊 Tipado Dinámico</h4><p>Verificación en ejecución. Mayor flexibilidad. Ej: Python, JavaScript, Ruby.</p></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">reglas de compatibilidad de tipos</span>
+        </div>
+        <div class="code-body">
+<span class="kw">function</span> <span class="fn">checkType</span>(E):<br>
+&nbsp;&nbsp;<span class="kw">case</span> E = E₁ <span class="op">+</span> E₂:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span>      (E₁.type == <span class="st">INT</span>   <span class="op">&&</span> E₂.type == <span class="st">INT</span>)   <span class="kw">return</span> <span class="st">INT</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else if</span> (E₁.type == <span class="st">FLOAT</span> <span class="op">||</span> E₂.type == <span class="st">FLOAT</span>) <span class="kw">return</span> <span class="st">FLOAT</span> <span class="cm">// coerción</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">else</span>    <span class="fn">errorTipo</span>(<span class="st">"Tipos incompatibles en +"</span>)
+        </div>
+      </div>
+      <div class="info-box green">
+        <h4>🔄 Coerciones y Conversiones</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
+          <div><p><strong>Implícita (coerción):</strong> El compilador convierte automáticamente.<br><span style="font-family:var(--mono);color:#f1fa8c;font-size:0.8rem">float f = i + 2.0;</span></p></div>
+          <div><p><strong>Explícita (cast):</strong> El programador fuerza la conversión.<br><span style="font-family:var(--mono);color:#f1fa8c;font-size:0.8rem">float f = (float) i;</span></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.4 PILA SEMÁNTICA -->
+<section class="section" id="pila">
+  <div class="section-header reveal">
+    <span class="section-num">1.4</span>
+    <h2 class="section-title">Pila Semántica en el Analizador Sintáctico</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>En los parsers <span class="hl">LR/LALR</span>, la <span class="hl2">pila semántica</span> es un espejo de la pila de estados que almacena los atributos de los símbolos. Al reducir, los atributos del cuerpo se combinan para calcular el atributo de la cabeza.</p>
+      <div class="two-col">
+        <div>
+          <p style="font-family:var(--mono);font-size:0.78rem;color:var(--muted);margin-bottom:1rem;">Parseando: <span style="color:#f1fa8c">3 + 4 * 2</span></p>
+          <div style="display:flex;gap:2rem;align-items:flex-end;">
+            <div>
+              <p style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem;text-align:center;">ESTADOS</p>
+              <div class="stack-visual">
+                <div class="stack-item bot">s0</div>
+                <div class="stack-item mid">s2 (3)</div>
+                <div class="stack-item mid">s5 (+)</div>
+                <div class="stack-item mid">s2 (4)</div>
+                <div class="stack-item mid">s7 (*)</div>
+                <div class="stack-item top">s2 (2) ←</div>
+              </div>
+            </div>
+            <div>
+              <p style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-bottom:0.4rem;text-align:center;">SEMÁNTICA</p>
+              <div class="stack-visual">
+                <div class="stack-item bot">—</div>
+                <div class="stack-item mid">val=3</div>
+                <div class="stack-item mid">—</div>
+                <div class="stack-item mid">val=4</div>
+                <div class="stack-item mid">—</div>
+                <div class="stack-item top">val=2 ←</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+          <div class="info-box blue">
+            <h4>📌 Operaciones sobre la pila</h4>
+            <ul class="numbered-list">
+              <li data-n="SHIFT">Al hacer shift: se empuja el lexval del token.</li>
+              <li data-n="REDUCE">Al hacer reduce: se sacan n atributos del cuerpo.</li>
+              <li data-n="CALC">Se calcula el atributo sintetizado con la acción.</li>
+              <li data-n="PUSH">Se empuja el nuevo atributo calculado.</li>
+            </ul>
+          </div>
+          <div class="code-block">
+            <div class="code-body" style="padding:1rem;font-size:0.78rem;">
+              <span class="cm">-- Reducción: E → E + T --</span><br>
+              T.val  = <span class="fn">pop</span>()  <span class="cm">// saca T</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="fn">pop</span>()  <span class="cm">// descarta '+'</span><br>
+              E₁.val = <span class="fn">pop</span>()  <span class="cm">// saca E₁</span><br>
+              <span class="fn">push</span>(E₁.val + T.val)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.5 ESQUEMA DE TRADUCCIÓN -->
+<section class="section" id="esquema">
+  <div class="section-header reveal">
+    <span class="section-num">1.5</span>
+    <h2 class="section-title">Esquema de Traducción</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Un <span class="hl">Esquema de Traducción Dirigido por Sintaxis (STDS)</span> es una gramática libre de contexto donde las producciones incluyen <span class="hl2">acciones incrustadas</span> indicando cuándo ejecutarlas.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">esquema de traducción — infija a postfija</span>
+        </div>
+        <div class="code-body">
+E  →  E₁ <span class="op">+</span> T  <span class="cm">{ print("+") }</span><br>
+E  →  T<br>
+T  →  T₁ <span class="op">*</span> F  <span class="cm">{ print("*") }</span><br>
+T  →  F<br>
+F  →  <span class="op">(</span>E<span class="op">)</span><br>
+F  →  <span class="nm">num</span>    <span class="cm">{ print(num.val) }</span><br><br>
+<span class="cm">/* Entrada: 3+4*2  →  Salida: 3 4 2 * + */</span>
+        </div>
+      </div>
+      <div class="flex-grid">
+        <div class="info-box blue"><h4>⬆️ S-atribuidas</h4><p>Solo atributos sintetizados. Acciones al final de las producciones. Compatibles con LR.</p></div>
+        <div class="info-box purple"><h4>↕️ L-atribuidas</h4><p>Sintetizados y heredados. Heredados solo de padres o hermanos izquierdos. Compatibles con LL.</p></div>
+      </div>
+      <div class="info-box yellow">
+        <h4>💡 Ejemplo: Traducción a código de 3 direcciones</h4>
+        <div style="margin-top:0.8rem;">
+          <div class="schema-row"><span class="schema-lhs">S → id := E</span><span class="schema-arrow">→</span><span class="schema-rhs">{ gen(id.lugar ':=' E.lugar) }</span></div>
+          <div class="schema-row"><span class="schema-lhs">E → E₁ + E₂</span><span class="schema-arrow">→</span><span class="schema-rhs">{ t=nuevaTemp(); gen(t ':=' E₁ '+' E₂); E.lugar=t }</span></div>
+          <div class="schema-row"><span class="schema-lhs">E → -E₁</span><span class="schema-arrow">→</span><span class="schema-rhs">{ t=nuevaTemp(); gen(t ':=' 'uminus' E₁); E.lugar=t }</span></div>
+          <div class="schema-row"><span class="schema-lhs">E → id</span><span class="schema-arrow">→</span><span class="schema-rhs">{ E.lugar = id.lugar }</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.6 TABLA DE SÍMBOLOS -->
+<section class="section" id="tabla">
+  <div class="section-header reveal">
+    <span class="section-num">1.6</span>
+    <h2 class="section-title">Tabla de Símbolos y Tabla de Direcciones</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>La <span class="hl">tabla de símbolos</span> es la estructura de datos central del compilador. Registra información de cada identificador y se consulta en <span class="hl2">todas las fases</span> de la compilación.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">tabla de símbolos — ejemplo</span>
+        </div>
+        <div class="code-body" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Ámbito</th><th>Dirección</th><th>Info extra</th></tr></thead>
+            <tbody>
+              <tr><td>x</td><td style="color:#50fa7b">int</td><td>global</td><td>0x0010</td><td>inicializado</td></tr>
+              <tr><td>pi</td><td style="color:#50fa7b">float</td><td>global</td><td>0x0014</td><td>const=3.14159</td></tr>
+              <tr><td>suma</td><td style="color:#8be9fd">function</td><td>global</td><td>0x0100</td><td>args=2, int→int</td></tr>
+              <tr><td>i</td><td style="color:#50fa7b">int</td><td>suma</td><td>0x0200</td><td>local</td></tr>
+              <tr><td>resultado</td><td style="color:#50fa7b">int</td><td>suma</td><td>0x0204</td><td>retval</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="flex-grid">
+        <div class="info-box green">
+          <h4>🔧 Implementaciones</h4>
+          <ul class="numbered-list">
+            <li data-n="01">Lista enlazada — O(n) búsqueda.</li>
+            <li data-n="02">Árbol binario de búsqueda — O(log n).</li>
+            <li data-n="03">Tabla hash — O(1) promedio. La más usada.</li>
+            <li data-n="04">Hash con encadenamiento para ámbitos anidados.</li>
+          </ul>
+        </div>
+        <div class="info-box yellow">
+          <h4>📍 Tabla de Direcciones</h4>
+          <p>Asigna a cada variable una dirección relativa dentro de su registro de activación.<br><br><span style="font-family:var(--mono);color:#f1fa8c;font-size:0.8rem">x: base + 0<br>y: base + 4<br>z: base + 8</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 1.7 ERRORES -->
+<section class="section" id="errores">
+  <div class="section-header reveal">
+    <span class="section-num">1.7</span>
+    <h2 class="section-title">Manejo de Errores Semánticos</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="deep-section reveal">
+    <div class="deep-content">
+      <p>Los <span class="hl2">errores semánticos</span> son errores de <em>significado</em>: el programa es sintácticamente correcto pero tiene incoherencias. El analizador debe <span class="hl">detectar, reportar y recuperarse</span> sin detener la compilación.</p>
+      <div class="error-grid">
+        <div class="error-card type-err"><h5>❌ Error de Tipo</h5><p>Operación entre tipos incompatibles.<br><span style="font-family:var(--mono);font-size:0.75rem;color:#ff3d71">int x = "hola";</span></p></div>
+        <div class="error-card decl-err"><h5>⚠️ No Declarada</h5><p>Uso de identificador no registrado.<br><span style="font-family:var(--mono);font-size:0.75rem;color:#f7971e">y = x + z; // z no declarada</span></p></div>
+        <div class="error-card scope-err"><h5>🔍 Error de Ámbito</h5><p>Acceso a variable fuera de su alcance.</p></div>
+        <div class="error-card arity-err"><h5>⚡ Aridad Incorrecta</h5><p>Número de argumentos incorrecto.<br><span style="font-family:var(--mono);font-size:0.75rem;color:#a259ff">suma(1,2,3) // espera 2</span></p></div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot dot-r"></div><div class="code-dot dot-y"></div><div class="code-dot dot-g"></div>
+          <span class="code-label">estrategia de recuperación — propagación de error</span>
+        </div>
+        <div class="code-body">
+<span class="kw">if</span> (error_tipo) {<br>
+&nbsp;&nbsp;<span class="fn">reportar</span>(<span class="st">"Error semántico línea "</span> + linea);<br>
+&nbsp;&nbsp;E.tipo = <span class="st">ERROR</span>; <span class="cm">// propagar para evitar cascada de falsos errores</span><br>
+}<br>
+<span class="kw">if</span> (E₁.tipo == <span class="st">ERROR</span> <span class="op">||</span> E₂.tipo == <span class="st">ERROR</span>)<br>
+&nbsp;&nbsp;E.tipo = <span class="st">ERROR</span>; <span class="cm">// sin reporte adicional</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- RESUMEN FLUJO -->
+<section class="section">
+  <div class="section-header reveal">
+    <span class="section-num">RESUMEN</span>
+    <h2 class="section-title">Flujo del Análisis Semántico</h2>
+    <div class="section-line"></div>
+  </div>
+  <div class="reveal" style="background:var(--card);border:1px solid var(--border);border-radius:1rem;padding:2rem;">
+    <div class="flow-diagram">
+      <div class="flow-box" style="background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.3);color:#00e5ff;"><div style="color:var(--muted);font-size:0.6rem;margin-bottom:0.2rem;">ENTRADA</div>Token Stream</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="background:rgba(162,89,255,0.08);border-color:rgba(162,89,255,0.3);color:#a259ff;"><div style="color:var(--muted);font-size:0.6rem;margin-bottom:0.2rem;">FASE</div>Parser + SDD</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="background:rgba(0,224,150,0.08);border-color:rgba(0,224,150,0.3);color:#00e096;"><div style="color:var(--muted);font-size:0.6rem;margin-bottom:0.2rem;">CONSTRUYE</div>Árbol + TabSimb</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="background:rgba(247,151,30,0.08);border-color:rgba(247,151,30,0.3);color:#f7971e;"><div style="color:var(--muted);font-size:0.6rem;margin-bottom:0.2rem;">VERIFICA</div>Tipos + Ámbitos</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-box" style="background:rgba(0,229,255,0.08);border-color:rgba(0,229,255,0.3);color:#00e5ff;"><div style="color:var(--muted);font-size:0.6rem;margin-bottom:0.2rem;">SALIDA</div>Código Intermedio</div>
+    </div>
+  </div>
+</section>
+
+<footer>©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II — Unidad 1 &nbsp;·&nbsp; José Jaime Peña González</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries =>
+    entries.forEach((e,i) => { if (e.isIntersecting) { setTimeout(()=>e.target.classList.add('visible'),i*70); obs.unobserve(e.target); } }),
+    { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
