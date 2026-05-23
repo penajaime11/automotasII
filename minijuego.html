@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline del Compilador — Minijuego | Lenguajes y Autómatas II</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  /* ── GAME LAYOUT ── */
+  .game-wrap {
+    position: relative;
+    z-index: 2;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 4.5rem 1.5rem 4rem;
+  }
+
+  .game-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    animation: fadeIn 0.8s ease both;
+  }
+
+  .game-header .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+    margin-bottom: 0.9rem;
+  }
+
+  .game-header h1 {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 7vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: 0.02em;
+  }
+
+  .game-header h1 .grad {
+    background: linear-gradient(90deg, var(--u1) 0%, var(--u2) 35%, var(--u3) 70%, var(--u4) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .game-header p.tagline {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 0.9rem;
+    font-weight: 300;
+  }
+
+  /* ── HUD: progress pipeline ── */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin-bottom: 2.2rem;
+    animation: fadeIn 0.8s 0.1s ease both;
+  }
+
+  .stage {
+    position: relative;
+    padding: 0.85rem 0.8rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    text-align: center;
+    transition: all 0.4s ease;
+    overflow: hidden;
+  }
+
+  .stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--st-color, transparent), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .stage.active { border-color: var(--st-border); }
+  .stage.active::before { opacity: 0.15; }
+  .stage.done {
+    border-color: var(--accent4);
+    background: linear-gradient(135deg, rgba(0,224,150,0.08), var(--card));
+  }
+  .stage.done::before { opacity: 0; }
+
+  .stage .st-num {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage .st-icon {
+    font-size: 1.4rem;
+    margin: 0.25rem 0 0.2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage .st-name {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 1;
+  }
+
+  .stage.done .st-icon::after {
+    content: '✓';
+    position: absolute;
+    top: -3px; right: 8px;
+    color: var(--accent4);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  /* ── CODE TRANSFORM PANEL ── */
+  .transform-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.4rem 1.4rem 1.2rem;
+    margin-bottom: 1.6rem;
+    animation: fadeIn 0.8s 0.18s ease both;
+  }
+
+  .tp-label {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .tp-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--current-color, var(--accent));
+    box-shadow: 0 0 6px var(--current-color, var(--accent));
+  }
+
+  .tp-code {
+    font-family: var(--mono);
+    font-size: 0.88rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 0.55rem;
+    padding: 1rem 1.2rem;
+    color: var(--text);
+    white-space: pre-wrap;
+    line-height: 1.65;
+    min-height: 60px;
+  }
+
+  .tp-code .kw     { color: var(--u2); font-weight: 600; }
+  .tp-code .num    { color: var(--u4); }
+  .tp-code .op     { color: var(--u3); }
+  .tp-code .id     { color: var(--u1); }
+  .tp-code .cmt    { color: var(--muted); font-style: italic; }
+  .tp-code .label  { color: var(--accent5); }
+
+  /* ── QUESTION CARD ── */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 1.8rem 1.7rem;
+    animation: fadeIn 0.5s ease both;
+  }
+
+  .qc-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .qc-meta .qc-unit {
+    color: var(--current-color, var(--accent));
+    padding: 0.25em 0.7em;
+    border: 1px solid var(--current-border, var(--border));
+    border-radius: 1em;
+    background: var(--current-glow, transparent);
+  }
+
+  .qc-question {
+    font-family: var(--display);
+    font-size: clamp(1.3rem, 3.5vw, 1.85rem);
+    line-height: 1.2;
+    letter-spacing: 0.015em;
+    margin-bottom: 1.4rem;
+  }
+
+  .qc-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .qc-opt {
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.6rem;
+    padding: 0.95rem 1.1rem;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+  }
+
+  .qc-opt:hover:not(:disabled) {
+    border-color: var(--current-border, rgba(0,229,255,0.45));
+    background: var(--current-glow, var(--card));
+    transform: translateX(3px);
+  }
+
+  .qc-opt .opt-key {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    width: 22px;
+    flex-shrink: 0;
+    letter-spacing: 0.08em;
+  }
+
+  .qc-opt.correct {
+    border-color: var(--accent4);
+    background: rgba(0,224,150,0.1);
+    color: var(--accent4);
+  }
+  .qc-opt.correct .opt-key { color: var(--accent4); }
+
+  .qc-opt.wrong {
+    border-color: var(--accent2);
+    background: rgba(255,61,113,0.1);
+    color: var(--accent2);
+  }
+  .qc-opt.wrong .opt-key { color: var(--accent2); }
+
+  .qc-opt:disabled { cursor: default; }
+  .qc-opt:disabled:not(.correct):not(.wrong) { opacity: 0.45; }
+
+  /* ── FEEDBACK ── */
+  .feedback {
+    margin-top: 1.2rem;
+    padding: 1rem 1.1rem;
+    border-radius: 0.55rem;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    display: none;
+    animation: fadeIn 0.35s ease;
+  }
+  .feedback.ok {
+    background: rgba(0,224,150,0.08);
+    border: 1px solid rgba(0,224,150,0.35);
+    color: #b9f4dc;
+    display: block;
+  }
+  .feedback.bad {
+    background: rgba(255,61,113,0.08);
+    border: 1px solid rgba(255,61,113,0.35);
+    color: #ffc6d4;
+    display: block;
+  }
+  .feedback strong { color: inherit; }
+
+  /* ── NEXT BUTTON ── */
+  .qc-next {
+    margin-top: 1.2rem;
+    display: none;
+    padding: 0.7em 1.7em;
+    background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(162,89,255,0.18));
+    border: 1px solid rgba(0,229,255,0.5);
+    border-radius: 2em;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .qc-next:hover {
+    background: linear-gradient(135deg, rgba(0,229,255,0.28), rgba(162,89,255,0.24));
+    border-color: rgba(0,229,255,0.8);
+    transform: translateY(-2px);
+  }
+  .qc-next.visible { display: inline-flex; align-items: center; gap: 0.5rem; }
+
+  /* ── HUD STATS ── */
+  .hud {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.6rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    animation: fadeIn 0.8s 0.25s ease both;
+  }
+  .hud span strong { color: var(--text); font-size: 0.9rem; margin-left: 0.4rem; }
+  .hud .lives { color: var(--accent2); }
+
+  /* ── FINAL SCREEN ── */
+  .final {
+    text-align: center;
+    padding: 3rem 1rem 1rem;
+    animation: fadeIn 0.6s ease both;
+  }
+  .final .crown { font-size: 3.5rem; margin-bottom: 0.8rem; }
+  .final h2 {
+    font-family: var(--display);
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    margin-bottom: 0.5rem;
+  }
+  .final h2 .grad {
+    background: linear-gradient(90deg, var(--u1), var(--u2), var(--u4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .final .summary {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 1.8rem;
+  }
+  .final .summary strong { color: var(--text); }
+
+  .scoreboard {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 380px;
+    margin: 0 auto 2rem;
+    gap: 0.7rem;
+  }
+  .sb-cell {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.7rem;
+    padding: 0.9rem 0.5rem;
+  }
+  .sb-cell .sb-label {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .sb-cell .sb-val {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    margin-top: 0.2rem;
+  }
+
+  .final-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    justify-content: center;
+  }
+  .final-actions button,
+  .final-actions a {
+    padding: 0.7em 1.6em;
+    border-radius: 2em;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+  }
+  .final-actions .primary {
+    background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(162,89,255,0.18));
+    border-color: rgba(0,229,255,0.5);
+    color: var(--accent);
+  }
+  .final-actions button:hover,
+  .final-actions a:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+
+  /* ── GAME OVER ── */
+  .game-over { color: var(--accent2); }
+  .game-over .crown { animation: shake 0.5s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+  }
+
+  /* ── INSTRUCTIONS MODAL ── */
+  .intro-card {
+    background: linear-gradient(135deg, rgba(0,229,255,0.04), rgba(162,89,255,0.04));
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    padding: 2rem 1.8rem;
+    margin-bottom: 1.5rem;
+    animation: fadeIn 0.6s ease both;
+  }
+  .intro-card h3 {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    margin-bottom: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+  .intro-card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.8rem 0 1.3rem;
+  }
+  .intro-card ul li {
+    padding: 0.4rem 0 0.4rem 1.6rem;
+    position: relative;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+  .intro-card ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  .intro-card ul li strong { color: var(--text); }
+  .start-btn {
+    padding: 0.85em 2.2em;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border: none;
+    border-radius: 2em;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--bg);
+    cursor: pointer;
+    font-weight: 700;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(0,229,255,0.25);
+  }
+
+  @media (max-width: 600px) {
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .scoreboard { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<a class="back-btn" href="index.html">← Inicio</a>
+
+<div class="game-wrap">
+
+  <header class="game-header">
+    <p class="eyebrow">Repaso final · Unidades 1 → 4</p>
+    <h1>Pipeline del <span class="grad">Compilador</span></h1>
+    <p class="tagline">Lleva el código fuente desde el análisis semántico hasta el código objeto sin que el compilador truene.</p>
+  </header>
+
+  <!-- PIPELINE HUD -->
+  <div class="pipeline" id="pipeline">
+    <div class="stage" data-stage="0" style="--st-color:var(--u1);--st-border:var(--u1);">
+      <div class="st-num">U1</div>
+      <div class="st-icon">🧠</div>
+      <div class="st-name">Semántico</div>
+    </div>
+    <div class="stage" data-stage="1" style="--st-color:var(--u2);--st-border:var(--u2);">
+      <div class="st-num">U2</div>
+      <div class="st-icon">⚙️</div>
+      <div class="st-name">Intermedio</div>
+    </div>
+    <div class="stage" data-stage="2" style="--st-color:var(--u3);--st-border:var(--u3);">
+      <div class="st-num">U3</div>
+      <div class="st-icon">🔧</div>
+      <div class="st-name">Optimización</div>
+    </div>
+    <div class="stage" data-stage="3" style="--st-color:var(--u4);--st-border:var(--u4);">
+      <div class="st-num">U4</div>
+      <div class="st-icon">💾</div>
+      <div class="st-name">Código Objeto</div>
+    </div>
+  </div>
+
+  <!-- AREA DE JUEGO -->
+  <div id="game-area">
+
+    <!-- Pantalla inicial -->
+    <div class="intro-card" id="intro">
+      <h3>🎮 ¿Cómo se juega?</h3>
+      <p style="color: var(--muted); font-size: 0.95rem;">
+        El compilador necesita procesar este programa. Tú eres el compilador.
+        Avanza por las 4 fases respondiendo correctamente. Cada acierto transforma el código a la siguiente representación.
+      </p>
+      <ul>
+        <li><strong>2 preguntas por unidad</strong> — 8 retos en total.</li>
+        <li><strong>3 vidas</strong> — cada error resta una.</li>
+        <li><strong>Si pierdes las 3</strong>, el compilador truena y empiezas de nuevo.</li>
+        <li>Cada acierto te muestra <strong>cómo se transforma el código</strong> en esa fase.</li>
+      </ul>
+      <button class="start-btn" onclick="startGame()">▶ Compilar</button>
+    </div>
+
+  </div>
+
+  <div class="hud" id="hud" style="display:none;">
+    <span>Pregunta <strong id="hud-q">1/8</strong></span>
+    <span>Aciertos <strong id="hud-score">0</strong></span>
+    <span class="lives">Vidas <strong id="hud-lives">♥♥♥</strong></span>
+  </div>
+
+</div>
+
+<footer style="text-align:center; padding: 2rem 1rem; color: var(--muted); font-size: 0.8rem; position: relative; z-index: 2;">
+  ©TecNM &nbsp;·&nbsp; Lenguajes y Autómatas II &nbsp;·&nbsp; José Jaime Peña González
+</footer>
+
+<script>
+/* ============================================================
+   PIPELINE DEL COMPILADOR · Minijuego de repaso
+   ============================================================ */
+
+// Programa base que va transformándose en cada fase
+const PROGRAM_STATES = [
+  {
+    label: "código fuente (entrada)",
+    code: '<span class="kw">int</span> <span class="id">x</span> <span class="op">=</span> <span class="num">3</span> <span class="op">+</span> <span class="num">4</span> <span class="op">*</span> <span class="num">2</span>;\n<span class="kw">int</span> <span class="id">y</span> <span class="op">=</span> <span class="id">x</span> <span class="op">+</span> <span class="num">0</span>;'
+  },
+  {
+    label: "✓ U1 — Tabla de símbolos generada · árbol verificado",
+    code: '<span class="cmt">// Tabla de símbolos</span>\n<span class="id">x</span> : <span class="kw">int</span>  → offset 0\n<span class="id">y</span> : <span class="kw">int</span>  → offset 4\n<span class="cmt">// Tipos verificados ✓  ·  AST construido ✓</span>'
+  },
+  {
+    label: "✓ U2 — Código intermedio (cuádruplos)",
+    code: '<span class="cmt">(op,   arg1, arg2, result)</span>\n(<span class="op">*</span>,    <span class="num">4</span>,    <span class="num">2</span>,    <span class="id">t1</span>)\n(<span class="op">+</span>,    <span class="num">3</span>,    <span class="id">t1</span>,   <span class="id">t2</span>)\n(<span class="op">=</span>,    <span class="id">t2</span>,   _,    <span class="id">x</span>)\n(<span class="op">+</span>,    <span class="id">x</span>,    <span class="num">0</span>,    <span class="id">t3</span>)\n(<span class="op">=</span>,    <span class="id">t3</span>,   _,    <span class="id">y</span>)'
+  },
+  {
+    label: "✓ U3 — Optimizado (plegado constantes + algebraica)",
+    code: '<span class="cmt">// Plegado:  4*2 = 8 ;  3+8 = 11</span>\n<span class="cmt">// Algebraica:  x + 0 → x</span>\n(<span class="op">=</span>,    <span class="num">11</span>,   _,    <span class="id">x</span>)\n(<span class="op">=</span>,    <span class="id">x</span>,    _,    <span class="id">y</span>)\n<span class="cmt">// 5 cuádruplos → 2 cuádruplos ✓</span>'
+  },
+  {
+    label: "✓ U4 — Código objeto (ensamblador x86-64)",
+    code: '<span class="label">main:</span>\n    <span class="kw">mov</span>   <span class="id">eax</span>, <span class="num">11</span>\n    <span class="kw">mov</span>   [<span class="id">x</span>], <span class="id">eax</span>\n    <span class="kw">mov</span>   [<span class="id">y</span>], <span class="id">eax</span>\n    <span class="kw">ret</span>\n<span class="cmt">; Programa compilado exitosamente 🎉</span>'
+  }
+];
+
+// 8 preguntas, 2 por unidad
+const QUESTIONS = [
+  // ============ UNIDAD 1 — ANÁLISIS SEMÁNTICO ============
+  {
+    unit: 0,
+    q: "Para la expresión int x = 3 + 4 * 2; ¿qué estructura construye el analizador semántico para verificar tipos y precedencia?",
+    options: [
+      "Una tabla hash de tokens",
+      "Un árbol sintáctico abstracto (AST) con atributos de tipo",
+      "Un diagrama de flujo de control",
+      "Un grafo de dependencias de registros"
+    ],
+    correct: 1,
+    explain: "El AST representa jerárquicamente la expresión. El analizador semántico recorre el árbol asignando <strong>atributos de tipo</strong> a cada nodo y verifica que las operaciones sean válidas."
+  },
+  {
+    unit: 0,
+    q: "Al declarar `int x` y luego `int y = x + 0;`, ¿dónde se almacenan x e y junto con su tipo y dirección?",
+    options: [
+      "En el código intermedio",
+      "En el banco de registros",
+      "En la tabla de símbolos",
+      "En la pila del sistema operativo"
+    ],
+    correct: 2,
+    explain: "La <strong>tabla de símbolos</strong> es la estructura central del análisis semántico: guarda identificador, tipo, ámbito y dirección/offset de cada variable declarada."
+  },
+
+  // ============ UNIDAD 2 — CÓDIGO INTERMEDIO ============
+  {
+    unit: 1,
+    q: "La expresión 3 + 4 * 2 en notación postfija (polaca inversa) es:",
+    options: [
+      "+ 3 * 4 2",
+      "3 4 2 * +",
+      "3 + 4 * 2",
+      "* + 3 4 2"
+    ],
+    correct: 1,
+    explain: "En postfija los operadores van <strong>después</strong> de sus operandos. Primero `4 2 *` (multiplica), luego `3 ... +` aplica la suma al resultado. Resultado: <code>3 4 2 * +</code>."
+  },
+  {
+    unit: 1,
+    q: "Un cuádruplo tiene la forma (op, arg1, arg2, result). ¿En qué se diferencia de un triple?",
+    options: [
+      "El triple no almacena el resultado: lo referencia por el índice del triple mismo",
+      "El triple solo sirve para expresiones booleanas",
+      "El cuádruplo no puede tener operadores unarios",
+      "Son exactamente lo mismo con diferente nombre"
+    ],
+    correct: 0,
+    explain: "En los <strong>triples</strong> el resultado se identifica por la posición del triple en la lista (ej. (0), (1)...), evitando crear temporales explícitos. Los <strong>cuádruplos</strong> sí guardan un campo `result` con el temporal."
+  },
+
+  // ============ UNIDAD 3 — OPTIMIZACIÓN ============
+  {
+    unit: 2,
+    q: "Reemplazar 4 * 2 por 8 en tiempo de compilación (porque ambos operandos son constantes) se llama:",
+    options: [
+      "Eliminación de subexpresiones comunes",
+      "Reducción de fuerza",
+      "Plegado de constantes (constant folding)",
+      "Propagación de copias"
+    ],
+    correct: 2,
+    explain: "<strong>Plegado de constantes</strong>: el compilador evalúa expresiones constantes en compile-time. Es una optimización local clásica que reduce instrucciones de ejecución."
+  },
+  {
+    unit: 2,
+    q: "Cambiar `x + 0` por simplemente `x` es un ejemplo de:",
+    options: [
+      "Optimización por mirilla (peephole) con simplificación algebraica",
+      "Análisis de flujo global",
+      "Eliminación de código muerto",
+      "Asignación de registros"
+    ],
+    correct: 0,
+    explain: "La <strong>optimización de mirilla</strong> examina una ventana pequeña de instrucciones y aplica simplificaciones algebraicas como <code>x+0 → x</code>, <code>x*1 → x</code>, <code>x*0 → 0</code>."
+  },
+
+  // ============ UNIDAD 4 — CÓDIGO OBJETO ============
+  {
+    unit: 3,
+    q: "La instrucción ensamblador `mov eax, 11` ¿qué hace exactamente?",
+    options: [
+      "Suma 11 al registro eax",
+      "Mueve el valor 11 al registro eax (carga inmediata)",
+      "Compara eax con 11",
+      "Mueve el contenido de la dirección 11 al registro eax"
+    ],
+    correct: 1,
+    explain: "`mov destino, fuente` <strong>copia</strong> el valor de la fuente al destino. Cuando la fuente es un número literal se llama <strong>direccionamiento inmediato</strong>: aquí carga el inmediato 11 en eax."
+  },
+  {
+    unit: 3,
+    q: "El compilador debe decidir qué variables vivirán en registros y cuáles en memoria. Cuando no alcanzan los registros y manda variables a memoria, esa técnica se llama:",
+    options: [
+      "Pipelining",
+      "Hashing",
+      "Spilling (derrame de registros)",
+      "Folding"
+    ],
+    correct: 2,
+    explain: "<strong>Spilling</strong>: cuando hay más variables vivas simultáneamente que registros disponibles, el asignador 'derrama' algunas a memoria (stack). Es costoso porque memoria es mucho más lenta que registro."
+  }
+];
+
+const UNIT_META = [
+  { color: 'var(--u1)', border: 'rgba(0,229,255,0.45)',  glow: 'rgba(0,229,255,0.08)',  name: 'Unidad 01 · Análisis Semántico' },
+  { color: 'var(--u2)', border: 'rgba(162,89,255,0.45)', glow: 'rgba(162,89,255,0.08)', name: 'Unidad 02 · Código Intermedio' },
+  { color: 'var(--u3)', border: 'rgba(255,61,113,0.45)', glow: 'rgba(255,61,113,0.08)', name: 'Unidad 03 · Optimización' },
+  { color: 'var(--u4)', border: 'rgba(0,224,150,0.45)',  glow: 'rgba(0,224,150,0.08)',  name: 'Unidad 04 · Código Objeto' }
+];
+
+// Estado del juego
+let state = {
+  idx: 0,
+  score: 0,
+  lives: 3,
+  currentStage: 0
+};
+
+function startGame() {
+  state = { idx: 0, score: 0, lives: 3, currentStage: 0 };
+  document.getElementById('hud').style.display = 'flex';
+  updatePipeline();
+  renderQuestion();
+  updateHUD();
+}
+
+function updatePipeline() {
+  const stages = document.querySelectorAll('.stage');
+  stages.forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i < state.currentStage) s.classList.add('done');
+    else if (i === state.currentStage) s.classList.add('active');
+  });
+}
+
+function updateHUD() {
+  document.getElementById('hud-q').textContent = (state.idx + 1) + '/' + QUESTIONS.length;
+  document.getElementById('hud-score').textContent = state.score;
+  document.getElementById('hud-lives').textContent = '♥'.repeat(state.lives) + '♡'.repeat(3 - state.lives);
+}
+
+function renderQuestion() {
+  if (state.idx >= QUESTIONS.length) { renderWin(); return; }
+
+  const q = QUESTIONS[state.idx];
+  state.currentStage = q.unit;
+  updatePipeline();
+
+  const meta = UNIT_META[q.unit];
+  const current = PROGRAM_STATES[q.unit]; // estado del código ANTES de esta fase
+
+  const area = document.getElementById('game-area');
+  area.innerHTML = `
+    <div class="transform-panel" style="--current-color:${meta.color};">
+      <div class="tp-label"><span class="dot"></span>Estado actual · ${current.label}</div>
+      <pre class="tp-code">${current.code}</pre>
+    </div>
+
+    <div class="question-card"
+         style="--current-color:${meta.color};--current-border:${meta.border};--current-glow:${meta.glow};">
+      <div class="qc-meta">
+        <span class="qc-unit">${meta.name}</span>
+        <span>Reto ${state.idx + 1} / ${QUESTIONS.length}</span>
+      </div>
+      <div class="qc-question">${q.q}</div>
+      <div class="qc-options" id="opts">
+        ${q.options.map((o, i) => `
+          <button class="qc-opt" data-i="${i}" onclick="selectAnswer(${i})">
+            <span class="opt-key">${String.fromCharCode(65 + i)}</span>
+            <span>${o}</span>
+          </button>`).join('')}
+      </div>
+      <div class="feedback" id="fb"></div>
+      <button class="qc-next" id="nextBtn" onclick="nextQuestion()">Siguiente fase →</button>
+    </div>
+  `;
+}
+
+function selectAnswer(i) {
+  const q = QUESTIONS[state.idx];
+  const opts = document.querySelectorAll('.qc-opt');
+  opts.forEach(o => o.disabled = true);
+
+  const fb = document.getElementById('fb');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (i === q.correct) {
+    opts[i].classList.add('correct');
+    state.score++;
+    fb.className = 'feedback ok';
+    fb.innerHTML = `<strong>✓ Correcto.</strong> ${q.explain}`;
+    // Si es la segunda pregunta de la unidad, avanzamos el código a la siguiente fase
+    const isSecondOfUnit = (state.idx % 2 === 1);
+    if (isSecondOfUnit) {
+      // marcamos esta unidad como completada
+      state.currentStage = q.unit + 1;
+      updatePipeline();
+      // mostramos transformación del código
+      const next = PROGRAM_STATES[q.unit + 1];
+      const tp = document.querySelector('.transform-panel');
+      setTimeout(() => {
+        tp.style.transition = 'opacity 0.3s';
+        tp.style.opacity = '0';
+        setTimeout(() => {
+          tp.innerHTML = `
+            <div class="tp-label"><span class="dot"></span>${next.label}</div>
+            <pre class="tp-code">${next.code}</pre>
+          `;
+          tp.style.opacity = '1';
+        }, 300);
+      }, 400);
+    }
+  } else {
+    opts[i].classList.add('wrong');
+    opts[q.correct].classList.add('correct');
+    state.lives--;
+    fb.className = 'feedback bad';
+    fb.innerHTML = `<strong>✗ Incorrecto.</strong> La respuesta correcta es <strong>${String.fromCharCode(65 + q.correct)}</strong>. ${q.explain}`;
+    if (state.lives <= 0) {
+      setTimeout(renderGameOver, 1200);
+      updateHUD();
+      return;
+    }
+  }
+  nextBtn.classList.add('visible');
+  updateHUD();
+}
+
+function nextQuestion() {
+  state.idx++;
+  if (state.idx >= QUESTIONS.length) renderWin();
+  else renderQuestion();
+  updateHUD();
+}
+
+function renderWin() {
+  // marcar todas como completas
+  state.currentStage = 4;
+  updatePipeline();
+  const finalCode = PROGRAM_STATES[4];
+  const area = document.getElementById('game-area');
+  area.innerHTML = `
+    <div class="transform-panel" style="--current-color:var(--u4);">
+      <div class="tp-label"><span class="dot"></span>${finalCode.label}</div>
+      <pre class="tp-code">${finalCode.code}</pre>
+    </div>
+    <div class="final">
+      <div class="crown">🏆</div>
+      <h2><span class="grad">Compilación exitosa</span></h2>
+      <p class="summary">Llevaste el programa desde el código fuente hasta el código objeto. <strong>¡Ese es el ciclo completo del compilador!</strong></p>
+      <div class="scoreboard">
+        <div class="sb-cell">
+          <div class="sb-label">Aciertos</div>
+          <div class="sb-val">${state.score} / ${QUESTIONS.length}</div>
+        </div>
+        <div class="sb-cell">
+          <div class="sb-label">Vidas restantes</div>
+          <div class="sb-val">${'♥'.repeat(state.lives)}</div>
+        </div>
+        <div class="sb-cell">
+          <div class="sb-label">Calificación</div>
+          <div class="sb-val">${gradeText()}</div>
+        </div>
+        <div class="sb-cell">
+          <div class="sb-label">Estado</div>
+          <div class="sb-val" style="color:var(--accent4);">OK ✓</div>
+        </div>
+      </div>
+      <div class="final-actions">
+        <button class="primary" onclick="startGame()">↻ Jugar de nuevo</button>
+        <a href="index.html">← Volver al portafolio</a>
+      </div>
+    </div>
+  `;
+}
+
+function renderGameOver() {
+  const area = document.getElementById('game-area');
+  area.innerHTML = `
+    <div class="final game-over">
+      <div class="crown">💥</div>
+      <h2 style="color:var(--accent2);">El compilador truenó</h2>
+      <p class="summary">Demasiados errores semánticos / sintácticos / de optimización acumulados. <strong>Pero los buenos programadores depuran y vuelven a intentarlo.</strong></p>
+      <div class="scoreboard">
+        <div class="sb-cell">
+          <div class="sb-label">Avance</div>
+          <div class="sb-val">${state.idx} / ${QUESTIONS.length}</div>
+        </div>
+        <div class="sb-cell">
+          <div class="sb-label">Aciertos</div>
+          <div class="sb-val">${state.score}</div>
+        </div>
+      </div>
+      <div class="final-actions">
+        <button class="primary" onclick="startGame()">↻ Recompilar</button>
+        <a href="index.html">← Volver al portafolio</a>
+      </div>
+    </div>
+  `;
+}
+
+function gradeText() {
+  const pct = state.score / QUESTIONS.length;
+  if (pct === 1)     return 'Perfecta';
+  if (pct >= 0.875)  return 'Excelente';
+  if (pct >= 0.75)   return 'Muy bien';
+  if (pct >= 0.5)    return 'Aprobado';
+  return 'Repasar';
+}
+</script>
+</body>
+</html>
